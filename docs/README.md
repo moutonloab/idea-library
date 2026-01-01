@@ -43,7 +43,7 @@ Each idea contains:
 ### File Structure
 
 ```
-app/
+docs/
 ├── index.html       # Main HTML file with all views
 ├── css/
 │   └── main.css     # Accessible, mobile-first styling
@@ -76,10 +76,10 @@ Client-side routing using URL hash:
 
 ### Deploying to GitHub Pages
 
-1. Push the `app` directory to your repository
+1. Push the `docs` directory to your repository
 2. Go to repository Settings → Pages
 3. Set source to deploy from branch
-4. Set directory to `/app`
+4. Set directory to `/docs`
 5. Save and wait for deployment
 
 ## Accessibility

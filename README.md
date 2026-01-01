@@ -60,7 +60,7 @@ Or run locally:
 ```bash
 # Clone the repository
 git clone https://github.com/moutonloab/idea-library.git
-cd idea-library/app
+cd idea-library/docs
 
 # Open in browser
 open index.html
@@ -68,7 +68,7 @@ open index.html
 python -m http.server 8000
 ```
 
-See [app/README.md](./app/README.md) for detailed usage instructions.
+See [docs/README.md](./docs/README.md) for detailed usage instructions.
 
 ### For Contributors
 
