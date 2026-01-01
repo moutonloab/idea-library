@@ -438,40 +438,6 @@ textarea.invalid {
 }
 
 /* ===========================
-   Badge
-   =========================== */
-
-.badge {
-    display: inline-block;
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: var(--border-radius);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.badge.captured {
-    background-color: #dbeafe;
-    color: #1e40af;
-}
-
-.badge.distilled {
-    background-color: #e0e7ff;
-    color: #4338ca;
-}
-
-.badge.expressed {
-    background-color: #fef3c7;
-    color: #92400e;
-}
-
-.badge.actioned {
-    background-color: #d1fae5;
-    color: #065f46;
-}
-
-/* ===========================
    Tags
    =========================== */
 

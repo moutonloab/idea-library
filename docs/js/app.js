@@ -141,7 +141,6 @@ class IdeaApp {
                 <p class="idea-preview">${this.escapeHtml(preview)}</p>
                 ${tagsHtml ? `<div class="idea-tags">${tagsHtml}</div>` : ''}
                 <div class="metadata">
-                    <span class="badge ${idea.stage}">${idea.stage}</span>
                     <time datetime="${idea.updated_at}">Updated ${relativeTime}</time>
                 </div>
             </a>
@@ -164,8 +163,6 @@ class IdeaApp {
         // Update detail view
         document.getElementById('detail-title').textContent = idea.title;
         document.getElementById('detail-body').textContent = idea.body;
-        document.getElementById('detail-stage').textContent = idea.stage;
-        document.getElementById('detail-stage').className = `badge ${idea.stage}`;
 
         const createdTime = document.getElementById('detail-created');
         createdTime.textContent = `Created ${this.formatDate(idea.created_at)}`;

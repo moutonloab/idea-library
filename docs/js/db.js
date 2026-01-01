@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'idea-library.db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;  // Incremented for schema change (removed stage, essence, insight)
 
 class IdeaDatabase {
     constructor() {
@@ -58,18 +58,13 @@ class IdeaDatabase {
                 id TEXT PRIMARY KEY,
                 title TEXT NOT NULL,
                 body TEXT NOT NULL,
-                stage TEXT NOT NULL DEFAULT 'captured',
                 tags TEXT DEFAULT '[]',
-                essence TEXT,
-                insight TEXT,
                 next_action TEXT,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                CHECK(stage IN ('captured', 'distilled', 'expressed', 'actioned'))
+                updated_at TEXT NOT NULL
             );
 
             CREATE INDEX IF NOT EXISTS idx_updated_at ON ideas(updated_at DESC);
-            CREATE INDEX IF NOT EXISTS idx_stage ON ideas(stage);
         `;
 
         this.db.run(schema);
@@ -81,18 +76,60 @@ class IdeaDatabase {
      */
     runMigrations() {
         try {
-            // Check if tags column exists
             const tableInfo = this.db.exec("PRAGMA table_info(ideas)");
             const columns = tableInfo[0]?.values.map(row => row[1]) || [];
 
+            // Migration 1: Add tags column if missing
             if (!columns.includes('tags')) {
-                // Add tags column to existing tables
                 this.db.run("ALTER TABLE ideas ADD COLUMN tags TEXT DEFAULT '[]'");
                 this.save();
                 console.log('Migration: Added tags column');
             }
+
+            // Migration 2: Remove stage, essence, insight columns
+            // SQLite doesn't support DROP COLUMN, so we need to recreate the table
+            if (columns.includes('stage') || columns.includes('essence') || columns.includes('insight')) {
+                console.log('Migration: Removing stage, essence, insight columns...');
+
+                // Step 1: Create new table with correct schema
+                this.db.run(`
+                    CREATE TABLE ideas_new (
+                        id TEXT PRIMARY KEY,
+                        title TEXT NOT NULL,
+                        body TEXT NOT NULL,
+                        tags TEXT DEFAULT '[]',
+                        next_action TEXT,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
+                    )
+                `);
+
+                // Step 2: Copy data from old table to new table (only the columns we want)
+                this.db.run(`
+                    INSERT INTO ideas_new (id, title, body, tags, next_action, created_at, updated_at)
+                    SELECT id, title, body,
+                           COALESCE(tags, '[]'),
+                           next_action,
+                           created_at,
+                           updated_at
+                    FROM ideas
+                `);
+
+                // Step 3: Drop old table
+                this.db.run('DROP TABLE ideas');
+
+                // Step 4: Rename new table to original name
+                this.db.run('ALTER TABLE ideas_new RENAME TO ideas');
+
+                // Step 5: Recreate index
+                this.db.run('CREATE INDEX idx_updated_at ON ideas(updated_at DESC)');
+
+                this.save();
+                console.log('Migration: Removed stage, essence, insight columns successfully');
+            }
         } catch (error) {
             console.error('Migration failed:', error);
+            throw error;  // Re-throw to prevent app from continuing with broken state
         }
     }
 
