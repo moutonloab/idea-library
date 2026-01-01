@@ -14,14 +14,19 @@ This project aims to bridge the gap between thought and action by providing:
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)**: Comprehensive architectural blueprint with design principles, technical stack, and implementation details
 - **[ROADMAP.md](./ROADMAP.md)**: Phased implementation plan from MVP to advanced features
+- **[DESIGN-PRINCIPLES-REVIEW.md](./DESIGN-PRINCIPLES-REVIEW.md)**: Analysis of design principles and best practices for knowledge management systems
+- **[DESIGN-RATIONALE.md](./DESIGN-RATIONALE.md)**: Detailed rationale for architectural decisions
 
 ## Design Principles
 
-1. **Accessibility First**: WCAG 2.1 AA compliant, keyboard navigable, screen reader optimized
-2. **GitHub-Native**: Leverages GitHub Pages, Actions, and Issues for hosting and workflows
-3. **Future-Proof**: Built on stable technologies with minimal dependencies
-4. **Simplicity**: Start minimal, grow as needed
-5. **Portability**: Plain text Markdown ensures longevity
+1. **Simplicity First**: Minimal viable architecture, avoid over-engineering, proven technologies
+2. **Accessibility by Design**: WCAG 2.1 AA compliant, keyboard navigable, screen reader optimized
+3. **Easy to Maintain**: Low operational overhead, automated workflows, minimal manual intervention
+4. **Privacy-First & Data Ownership**: You own your data, private by default, no vendor lock-in
+5. **Future-Proof & Portable**: Standard formats, platform independence, 10+ year viability
+6. **Content-First Design**: Content drives structure, minimal ceremony, fast and searchable
+
+See [DESIGN-PRINCIPLES-REVIEW.md](./DESIGN-PRINCIPLES-REVIEW.md) for detailed rationale and best practices.
 
 ## Technology Stack
 

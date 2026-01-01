@@ -10,6 +10,7 @@ A library to frictionlessly capture ideas that emerge from my inner world, organ
 - Avoid over-engineering
 - Use proven, stable technologies
 - Prefer convention over configuration
+- YAGNI (You Aren't Gonna Need It)
 
 ### 2. **Accessibility by Design**
 - WCAG 2.1 AA compliance minimum
@@ -18,22 +19,50 @@ A library to frictionlessly capture ideas that emerge from my inner world, organ
 - Screen reader optimization
 - Progressive enhancement approach
 
-### 3. **GitHub-Native**
-- Leverage GitHub's ecosystem for hosting, CI/CD, and collaboration
-- Version control as the source of truth
-- GitHub Pages for hosting
-- GitHub Actions for automation
+### 3. **Easy to Maintain**
+- Low operational overhead - minimal time spent on system maintenance
+- Self-explanatory structure - clear organization without extensive documentation
+- Automated where possible - CI/CD, testing, deployment
+- Graceful degradation - system works even if some parts fail
+- Clear upgrade paths - easy to update dependencies and features
+- Minimal manual intervention - reduce toil and repetitive tasks
+- Fast feedback loops - quick to test, build, deploy
 
-### 4. **Future-Proof & Sustainable**
-- Technology choices with long-term viability
-- Minimal dependencies
-- Plain text content (Markdown) for longevity
-- Static generation for performance and portability
+### 4. **Privacy-First & Data Ownership**
+- You own your data - plain text files you control
+- Private by default - public sharing is opt-in
+- No vendor lock-in - export and migrate anytime
+- No tracking - no analytics unless explicitly added
+- Local-first capable - works offline, syncs when online
+- Transparent data flow - clear where data goes
 
-### 5. **Friction-Free Capture**
-- Multiple input methods (web form, direct file creation, API)
-- Template-based idea creation
-- Mobile-friendly interface
+### 5. **Future-Proof & Portable**
+- Technology choices with long-term viability (10+ years)
+- Minimal dependencies - fewer things to break
+- Standard formats - Markdown, HTML, CSS, JSON
+- Platform independence - not tied to any single vendor
+- Easy migration - can move to any platform
+- Backward compatible - old content always works
+- Forward compatible - ready for new features
+
+### 6. **Content-First Design**
+- Content drives structure - organization emerges from content
+- Minimal ceremony - low overhead to create and edit
+- Readable source - plain text, human-readable
+- Version control - full history preserved
+- Search-friendly - easy to find content
+- Fast to render - content loads quickly
+
+### Implementation Note: GitHub Integration
+
+While **GitHub-Native** is not a core design principle (to avoid platform lock-in), we deliberately choose GitHub for implementation because:
+- Excellent free hosting via GitHub Pages
+- Robust CI/CD via GitHub Actions
+- Built-in version control
+- Issue templates for idea capture
+- Wide adoption and reliability
+
+**Important:** The architecture remains platform-independent. All content is in standard Markdown, and the static site can be hosted anywhere (Netlify, Vercel, self-hosted, etc.). GitHub is a choice, not a requirement.
 
 ---
 
@@ -403,14 +432,22 @@ npm run test         # Run tests (accessibility, lint)
 
 ## Conclusion
 
-This architecture provides:
-- ✅ **Frictionless capture**: Multiple input methods, simple workflow
-- ✅ **Logical organization**: Status-based folders, metadata-rich
-- ✅ **Intuitive distillation**: Structured format guides insight extraction
-- ✅ **Action-ready**: Built-in action items, export capabilities
-- ✅ **Accessible**: WCAG-compliant, keyboard-friendly
-- ✅ **GitHub-native**: Pages, Actions, Issues integration
-- ✅ **Sustainable**: Simple stack, plain text, portable
-- ✅ **Future-proof**: Migration paths, scalability considered
+This architecture embodies the 6 core design principles:
 
-The architecture starts simple but with clear paths for growth, ensuring the system can evolve as needs expand while maintaining its core principles.
+1. ✅ **Simplicity First**: Minimal viable architecture, proven technologies, no over-engineering
+2. ✅ **Accessibility by Design**: WCAG 2.1 AA compliant, keyboard navigable, screen reader optimized
+3. ✅ **Easy to Maintain**: Low operational overhead, automated workflows, self-explanatory structure
+4. ✅ **Privacy-First & Data Ownership**: You own your data, private by default, no vendor lock-in
+5. ✅ **Future-Proof & Portable**: Standard formats, platform independence, 10+ year viability
+6. ✅ **Content-First Design**: Content drives structure, minimal ceremony, fast and searchable
+
+**What this means in practice:**
+- **Frictionless capture**: Multiple input methods, simple workflow
+- **Logical organization**: Status-based folders, metadata-rich
+- **Intuitive distillation**: Structured format guides insight extraction
+- **Action-ready**: Built-in action items, export capabilities
+- **Low maintenance**: Automated deployment, minimal intervention needed
+- **Your data, your control**: Plain text files, easy to migrate, no lock-in
+- **Built to last**: Simple stack, portable, scalable
+
+The architecture starts simple but with clear paths for growth, ensuring the system can evolve as needs expand while maintaining its core principles and respecting user sovereignty over their ideas.

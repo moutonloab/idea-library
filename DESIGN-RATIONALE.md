@@ -2,6 +2,8 @@
 
 This document explains the reasoning behind key architectural decisions for the Idea Library project.
 
+> **Note**: For a comprehensive review of design principles and best practices for knowledge management systems, see [DESIGN-PRINCIPLES-REVIEW.md](./DESIGN-PRINCIPLES-REVIEW.md). This document focuses on specific technical implementation choices.
+
 ## Table of Contents
 - [Why Static Site Generation?](#why-static-site-generation)
 - [Why 11ty (Eleventy)?](#why-11ty-eleventy)
@@ -388,16 +390,16 @@ For current needs (reading, browsing, searching ideas), vanilla JS is sufficient
 
 ## Summary: Architecture Philosophy
 
-The Idea Library architecture follows these guiding principles:
+The Idea Library architecture embodies these 6 core design principles:
 
-1. **Start Simple**: Minimum viable complexity
-2. **Future-Proof**: Portable, standard formats
-3. **User-Centric**: Accessibility and usability first
-4. **Developer-Friendly**: Familiar tools, minimal setup
-5. **Sustainable**: Low cost, low maintenance
-6. **Flexible**: Easy to extend and modify
+1. **Simplicity First**: Minimum viable complexity, proven technologies
+2. **Accessibility by Design**: Accessibility and usability first, WCAG 2.1 AA compliant
+3. **Easy to Maintain**: Low operational overhead, automated where possible
+4. **Privacy-First & Data Ownership**: You own your data, no vendor lock-in
+5. **Future-Proof & Portable**: Standard formats, platform independence, 10+ year viability
+6. **Content-First Design**: Content drives structure, minimal ceremony
 
-Every decision prioritizes **longevity, simplicity, and accessibility** over cutting-edge features or complexity.
+Every decision prioritizes **longevity, simplicity, accessibility, and user sovereignty** over cutting-edge features or complexity.
 
 The goal is a system that:
 - Works in 10 years without changes
@@ -405,9 +407,12 @@ The goal is a system that:
 - Costs nothing to run
 - Serves all users regardless of ability
 - Focuses on content over technology
+- Respects user privacy and data ownership
+- Requires minimal maintenance overhead
 
 ---
 
-**Document Version**: 1.0
+**Document Version**: 1.1
 **Last Updated**: 2026-01-01
 **Author**: Architecture Team
+**Changelog**: Updated to align with 6 core design principles (v1.1)
