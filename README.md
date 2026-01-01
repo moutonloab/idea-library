@@ -38,17 +38,41 @@ See [DESIGN-PRINCIPLES-REVIEW.md](./DESIGN-PRINCIPLES-REVIEW.md) for detailed ra
 
 ## Current Status
 
-**Phase**: Foundation (Phase 0) → Moving to MVP (Phase 1)
+**Phase**: v0 Released! 🎉
 
-See [ROADMAP.md](./ROADMAP.md) for detailed implementation phases.
+**v0 Features:**
+- ✅ Create, read, update ideas
+- ✅ List all ideas (sorted by most recent)
+- ✅ Export all ideas as JSON backup
+- ✅ Local-first: All data stored in your browser
+- ✅ No server, no sync, fully client-side
+- ✅ WCAG 2.1 AA accessible
+
+See [ROADMAP.md](./ROADMAP.md) for future planned features.
 
 ## Getting Started
 
-### For Contributors
-Coming soon! See ROADMAP.md for the development plan.
+### 🚀 Try the App
 
-### For Users
-The application is currently in the design phase. Watch this repository for updates!
+**Live Demo**: [GitHub Pages URL will be here after deployment]
+
+Or run locally:
+```bash
+# Clone the repository
+git clone https://github.com/moutonloab/idea-library.git
+cd idea-library/app
+
+# Open in browser
+open index.html
+# or use a local server
+python -m http.server 8000
+```
+
+See [app/README.md](./app/README.md) for detailed usage instructions.
+
+### For Contributors
+
+See [ROADMAP.md](./ROADMAP.md) for the development plan and how to contribute.
 
 ## License
 
