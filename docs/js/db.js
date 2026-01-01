@@ -31,6 +31,9 @@ class IdeaDatabase {
                 const uint8Array = this.base64ToUint8Array(savedDb);
                 this.db = new this.SQL.Database(uint8Array);
                 console.log('Loaded existing database from localStorage');
+
+                // Run migrations for existing databases
+                this.runMigrations();
             } else {
                 // Create new database
                 this.db = new this.SQL.Database();
@@ -56,6 +59,7 @@ class IdeaDatabase {
                 title TEXT NOT NULL,
                 body TEXT NOT NULL,
                 stage TEXT NOT NULL DEFAULT 'captured',
+                tags TEXT DEFAULT '[]',
                 essence TEXT,
                 insight TEXT,
                 next_action TEXT,
@@ -70,6 +74,26 @@ class IdeaDatabase {
 
         this.db.run(schema);
         console.log('Database schema created');
+    }
+
+    /**
+     * Run migrations for existing databases
+     */
+    runMigrations() {
+        try {
+            // Check if tags column exists
+            const tableInfo = this.db.exec("PRAGMA table_info(ideas)");
+            const columns = tableInfo[0]?.values.map(row => row[1]) || [];
+
+            if (!columns.includes('tags')) {
+                // Add tags column to existing tables
+                this.db.run("ALTER TABLE ideas ADD COLUMN tags TEXT DEFAULT '[]'");
+                this.save();
+                console.log('Migration: Added tags column');
+            }
+        } catch (error) {
+            console.error('Migration failed:', error);
+        }
     }
 
     /**
@@ -89,16 +113,17 @@ class IdeaDatabase {
     /**
      * Create a new idea
      */
-    createIdea(title, body) {
+    createIdea(title, body, tags = []) {
         const id = this.generateUUID();
         const now = new Date().toISOString();
+        const tagsJson = JSON.stringify(tags);
 
         const stmt = this.db.prepare(`
-            INSERT INTO ideas (id, title, body, stage, created_at, updated_at)
-            VALUES (?, ?, ?, 'captured', ?, ?)
+            INSERT INTO ideas (id, title, body, stage, tags, created_at, updated_at)
+            VALUES (?, ?, ?, 'captured', ?, ?, ?)
         `);
 
-        stmt.bind([id, title, body, now, now]);
+        stmt.bind([id, title, body, tagsJson, now, now]);
         stmt.step();
         stmt.free();
 
@@ -115,6 +140,16 @@ class IdeaDatabase {
 
         while (stmt.step()) {
             const row = stmt.getAsObject();
+            // Parse tags from JSON
+            if (row.tags) {
+                try {
+                    row.tags = JSON.parse(row.tags);
+                } catch (e) {
+                    row.tags = [];
+                }
+            } else {
+                row.tags = [];
+            }
             ideas.push(row);
         }
 
@@ -132,6 +167,16 @@ class IdeaDatabase {
         let idea = null;
         if (stmt.step()) {
             idea = stmt.getAsObject();
+            // Parse tags from JSON
+            if (idea.tags) {
+                try {
+                    idea.tags = JSON.parse(idea.tags);
+                } catch (e) {
+                    idea.tags = [];
+                }
+            } else {
+                idea.tags = [];
+            }
         }
 
         stmt.free();
@@ -149,8 +194,10 @@ class IdeaDatabase {
         // Build dynamic UPDATE query
         for (const [key, value] of Object.entries(updates)) {
             if (key !== 'id' && key !== 'created_at') {
+                // Convert tags array to JSON string
+                const finalValue = key === 'tags' ? JSON.stringify(value) : value;
                 fields.push(`${key} = ?`);
-                values.push(value);
+                values.push(finalValue);
             }
         }
 
@@ -193,6 +240,22 @@ class IdeaDatabase {
             exported_at: new Date().toISOString(),
             ideas: ideas
         };
+    }
+
+    /**
+     * Get all unique tags from all ideas
+     */
+    getAllTags() {
+        const ideas = this.getAllIdeas();
+        const tagSet = new Set();
+
+        ideas.forEach(idea => {
+            if (Array.isArray(idea.tags)) {
+                idea.tags.forEach(tag => tagSet.add(tag));
+            }
+        });
+
+        return Array.from(tagSet).sort();
     }
 
     /**

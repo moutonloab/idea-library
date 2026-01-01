@@ -9,6 +9,8 @@ class IdeaApp {
     constructor() {
         this.currentView = null;
         this.currentIdeaId = null;
+        this.currentTags = [];  // Tags for current idea being created/edited
+        this.selectedSuggestionIndex = -1;  // For keyboard navigation in dropdown
     }
 
     /**
@@ -52,6 +54,16 @@ class IdeaApp {
         // Delete button
         const deleteBtn = document.getElementById('delete-btn');
         deleteBtn.addEventListener('click', () => this.handleDelete());
+
+        // Tags input
+        const tagsInput = document.getElementById('idea-tags-input');
+        tagsInput.addEventListener('keydown', (e) => this.handleTagInputKeydown(e));
+        tagsInput.addEventListener('input', (e) => this.handleTagInputChange(e));
+        tagsInput.addEventListener('focus', () => this.showTagSuggestions());
+        tagsInput.addEventListener('blur', () => {
+            // Delay to allow click on suggestions
+            setTimeout(() => this.hideTagSuggestions(), 200);
+        });
     }
 
     /**
@@ -118,11 +130,16 @@ class IdeaApp {
     renderIdeaCard(idea) {
         const preview = this.truncate(idea.body, 150);
         const relativeTime = this.getRelativeTime(idea.updated_at);
+        const tags = idea.tags || [];
+        const tagsHtml = tags.length > 0 ? tags.map(tag =>
+            `<span class="tag">${this.escapeHtml(tag)}</span>`
+        ).join('') : '';
 
         return `
             <a href="#/idea/${idea.id}" class="idea-card" role="listitem">
                 <h3>${this.escapeHtml(idea.title)}</h3>
                 <p class="idea-preview">${this.escapeHtml(preview)}</p>
+                ${tagsHtml ? `<div class="idea-tags">${tagsHtml}</div>` : ''}
                 <div class="metadata">
                     <span class="badge ${idea.stage}">${idea.stage}</span>
                     <time datetime="${idea.updated_at}">Updated ${relativeTime}</time>
@@ -158,6 +175,17 @@ class IdeaApp {
         updatedTime.textContent = `Updated ${this.formatDate(idea.updated_at)}`;
         updatedTime.setAttribute('datetime', idea.updated_at);
 
+        // Render tags
+        const tags = idea.tags || [];
+        const tagsContainer = document.getElementById('detail-tags');
+        if (tags.length > 0) {
+            tagsContainer.innerHTML = tags.map(tag =>
+                `<span class="tag">${this.escapeHtml(tag)}</span>`
+            ).join('');
+        } else {
+            tagsContainer.innerHTML = '';
+        }
+
         // Update edit button href
         document.getElementById('edit-btn').href = `#/edit/${id}`;
 
@@ -174,6 +202,7 @@ class IdeaApp {
         // Reset form
         form.reset();
         this.clearFormErrors();
+        this.currentTags = [];  // Reset tags
 
         if (id) {
             // Edit mode
@@ -188,6 +217,7 @@ class IdeaApp {
             document.getElementById('idea-id').value = id;
             document.getElementById('idea-title').value = idea.title;
             document.getElementById('idea-body').value = idea.body;
+            this.currentTags = idea.tags || [];  // Load existing tags
         } else {
             // Create mode
             this.currentIdeaId = null;
@@ -195,6 +225,7 @@ class IdeaApp {
             document.getElementById('idea-id').value = '';
         }
 
+        this.renderTags();  // Render tags
         this.showView('form-view');
         // Focus first input for accessibility
         document.getElementById('idea-title').focus();
@@ -234,11 +265,11 @@ class IdeaApp {
         try {
             if (id) {
                 // Update existing idea
-                db.updateIdea(id, { title, body });
+                db.updateIdea(id, { title, body, tags: this.currentTags });
                 window.location.hash = `#/idea/${id}`;
             } else {
                 // Create new idea
-                const newId = db.createIdea(title, body);
+                const newId = db.createIdea(title, body, this.currentTags);
                 window.location.hash = `#/idea/${newId}`;
             }
         } catch (error) {
@@ -262,6 +293,174 @@ class IdeaApp {
                 alert('Failed to delete idea. Please try again.');
             }
         }
+    }
+
+    /**
+     * Handle tag input keydown (Enter, Escape, Arrow keys)
+     */
+    handleTagInputKeydown(e) {
+        const input = e.target;
+        const dropdown = document.getElementById('tags-dropdown');
+        const suggestions = dropdown.querySelectorAll('.tag-suggestion');
+
+        if (e.key === 'Enter') {
+            e.preventDefault();
+
+            // If a suggestion is selected, use it
+            if (this.selectedSuggestionIndex >= 0 && suggestions[this.selectedSuggestionIndex]) {
+                const tagText = suggestions[this.selectedSuggestionIndex].textContent;
+                this.addTag(tagText);
+            } else {
+                // Otherwise add the typed text
+                const value = input.value.trim();
+                if (value) {
+                    this.addTag(value);
+                }
+            }
+            input.value = '';
+            this.hideTagSuggestions();
+            this.selectedSuggestionIndex = -1;
+        } else if (e.key === 'Escape') {
+            this.hideTagSuggestions();
+            this.selectedSuggestionIndex = -1;
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (suggestions.length > 0) {
+                this.selectedSuggestionIndex = Math.min(
+                    this.selectedSuggestionIndex + 1,
+                    suggestions.length - 1
+                );
+                this.updateSelectedSuggestion();
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (suggestions.length > 0) {
+                this.selectedSuggestionIndex = Math.max(this.selectedSuggestionIndex - 1, 0);
+                this.updateSelectedSuggestion();
+            }
+        }
+    }
+
+    /**
+     * Handle tag input change (filter suggestions)
+     */
+    handleTagInputChange(e) {
+        const value = e.target.value.trim();
+        if (value) {
+            this.showTagSuggestions(value);
+        } else {
+            this.showTagSuggestions();
+        }
+    }
+
+    /**
+     * Add a tag
+     */
+    addTag(tag) {
+        const trimmedTag = tag.trim();
+        if (!trimmedTag) return;
+
+        // Don't add duplicates
+        if (this.currentTags.includes(trimmedTag)) return;
+
+        this.currentTags.push(trimmedTag);
+        this.renderTags();
+    }
+
+    /**
+     * Remove a tag
+     */
+    removeTag(tag) {
+        this.currentTags = this.currentTags.filter(t => t !== tag);
+        this.renderTags();
+    }
+
+    /**
+     * Render tags in the form
+     */
+    renderTags() {
+        const display = document.getElementById('tags-display');
+        display.innerHTML = this.currentTags.map(tag => `
+            <span class="tag" role="listitem" tabindex="0">
+                ${this.escapeHtml(tag)}
+                <button
+                    class="tag-remove"
+                    type="button"
+                    onclick="window.app.removeTag('${this.escapeHtml(tag)}')"
+                    aria-label="Remove tag ${this.escapeHtml(tag)}"
+                >×</button>
+            </span>
+        `).join('');
+    }
+
+    /**
+     * Show tag suggestions dropdown
+     */
+    showTagSuggestions(filter = '') {
+        const allTags = db.getAllTags();
+        const dropdown = document.getElementById('tags-dropdown');
+
+        // Filter out already selected tags and apply search filter
+        let suggestions = allTags.filter(tag =>
+            !this.currentTags.includes(tag) &&
+            tag.toLowerCase().includes(filter.toLowerCase())
+        );
+
+        if (suggestions.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        dropdown.innerHTML = suggestions.map((tag, index) => `
+            <div
+                class="tag-suggestion"
+                role="option"
+                tabindex="0"
+                data-tag="${this.escapeHtml(tag)}"
+                onclick="window.app.selectSuggestion('${this.escapeHtml(tag)}')"
+            >
+                ${this.escapeHtml(tag)}
+            </div>
+        `).join('');
+
+        dropdown.style.display = 'block';
+        this.selectedSuggestionIndex = -1;
+    }
+
+    /**
+     * Hide tag suggestions dropdown
+     */
+    hideTagSuggestions() {
+        const dropdown = document.getElementById('tags-dropdown');
+        dropdown.style.display = 'none';
+        this.selectedSuggestionIndex = -1;
+    }
+
+    /**
+     * Select a suggestion from dropdown
+     */
+    selectSuggestion(tag) {
+        this.addTag(tag);
+        document.getElementById('idea-tags-input').value = '';
+        this.hideTagSuggestions();
+        document.getElementById('idea-tags-input').focus();
+    }
+
+    /**
+     * Update selected suggestion visual state
+     */
+    updateSelectedSuggestion() {
+        const dropdown = document.getElementById('tags-dropdown');
+        const suggestions = dropdown.querySelectorAll('.tag-suggestion');
+
+        suggestions.forEach((s, i) => {
+            if (i === this.selectedSuggestionIndex) {
+                s.classList.add('selected');
+                s.scrollIntoView({ block: 'nearest' });
+            } else {
+                s.classList.remove('selected');
+            }
+        });
     }
 
     /**
@@ -396,10 +595,10 @@ class IdeaApp {
 // Initialize app when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        const app = new IdeaApp();
-        app.init();
+        window.app = new IdeaApp();
+        window.app.init();
     });
 } else {
-    const app = new IdeaApp();
-    app.init();
+    window.app = new IdeaApp();
+    window.app.init();
 }

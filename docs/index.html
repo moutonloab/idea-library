@@ -80,6 +80,26 @@
                         <span class="error" id="body-error" role="alert"></span>
                     </div>
 
+                    <div class="form-group">
+                        <label for="idea-tags-input">
+                            Tags <span class="help-text">(Press Enter to add)</span>
+                        </label>
+                        <div class="tags-input-wrapper">
+                            <div id="tags-display" class="tags-display" role="list"></div>
+                            <input
+                                type="text"
+                                id="idea-tags-input"
+                                name="tags-input"
+                                placeholder="Add a tag..."
+                                autocomplete="off"
+                                list="tags-suggestions"
+                            >
+                            <datalist id="tags-suggestions"></datalist>
+                        </div>
+                        <div id="tags-dropdown" class="tags-dropdown" style="display: none;" role="listbox"></div>
+                        <span class="help-text">Click a tag to remove it</span>
+                    </div>
+
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">Save</button>
                         <a href="#/" class="btn btn-secondary">Cancel</a>
@@ -103,6 +123,7 @@
                         <time id="detail-created" datetime=""></time>
                         <time id="detail-updated" datetime=""></time>
                     </div>
+                    <div id="detail-tags" class="idea-tags"></div>
                     <div id="detail-body" class="idea-body"></div>
                 </article>
             </div>

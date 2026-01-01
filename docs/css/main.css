@@ -472,6 +472,127 @@ textarea.invalid {
 }
 
 /* ===========================
+   Tags
+   =========================== */
+
+.tags-input-wrapper {
+    position: relative;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: var(--space-sm);
+    background: var(--color-bg);
+    transition: var(--transition);
+}
+
+.tags-input-wrapper:focus-within {
+    border-color: var(--color-primary);
+}
+
+.tags-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-xs);
+}
+
+.tags-display:empty {
+    margin-bottom: 0;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    background-color: var(--color-primary);
+    color: white;
+    border-radius: var(--border-radius);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.tag:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.tag:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.tag-remove {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+#idea-tags-input {
+    border: none;
+    outline: none;
+    padding: var(--space-xs) 0;
+    font-size: 1rem;
+    width: 100%;
+}
+
+.tags-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+}
+
+.tag-suggestion {
+    padding: var(--space-sm) var(--space-md);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.tag-suggestion:hover,
+.tag-suggestion:focus {
+    background-color: var(--color-bg-alt);
+}
+
+.tag-suggestion.selected {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.idea-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.idea-tags:empty {
+    display: none;
+}
+
+.idea-tags .tag {
+    cursor: default;
+}
+
+.help-text {
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+    font-weight: normal;
+}
+
+/* ===========================
    Empty State
    =========================== */
 
