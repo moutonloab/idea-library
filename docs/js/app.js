@@ -377,17 +377,26 @@ class IdeaApp {
      */
     renderTags() {
         const display = document.getElementById('tags-display');
-        display.innerHTML = this.currentTags.map(tag => `
-            <span class="tag" role="listitem" tabindex="0">
+        display.innerHTML = this.currentTags.map((tag, index) => `
+            <span class="tag" role="listitem" tabindex="0" data-tag-index="${index}">
                 ${this.escapeHtml(tag)}
                 <button
                     class="tag-remove"
                     type="button"
-                    onclick="window.app.removeTag('${this.escapeHtml(tag)}')"
+                    data-tag-index="${index}"
                     aria-label="Remove tag ${this.escapeHtml(tag)}"
                 >×</button>
             </span>
         `).join('');
+
+        // Add event listeners for remove buttons
+        display.querySelectorAll('.tag-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = parseInt(e.target.getAttribute('data-tag-index'));
+                this.currentTags.splice(index, 1);
+                this.renderTags();
+            });
+        });
     }
 
     /**
@@ -414,11 +423,22 @@ class IdeaApp {
                 role="option"
                 tabindex="0"
                 data-tag="${this.escapeHtml(tag)}"
-                onclick="window.app.selectSuggestion('${this.escapeHtml(tag)}')"
             >
                 ${this.escapeHtml(tag)}
             </div>
         `).join('');
+
+        // Add event listeners for suggestions
+        dropdown.querySelectorAll('.tag-suggestion').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const tag = e.target.getAttribute('data-tag');
+                // Decode HTML entities back to original text
+                const textarea = document.createElement('textarea');
+                textarea.innerHTML = tag;
+                const decodedTag = textarea.value;
+                this.selectSuggestion(decodedTag);
+            });
+        });
 
         dropdown.style.display = 'block';
         this.selectedSuggestionIndex = -1;
