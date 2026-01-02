@@ -156,8 +156,8 @@ class IdeaDatabase {
         const tagsJson = JSON.stringify(tags);
 
         const stmt = this.db.prepare(`
-            INSERT INTO ideas (id, title, body, stage, tags, created_at, updated_at)
-            VALUES (?, ?, ?, 'captured', ?, ?, ?)
+            INSERT INTO ideas (id, title, body, tags, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
         `);
 
         stmt.bind([id, title, body, tagsJson, now, now]);

@@ -422,7 +422,7 @@ class IdeaApp {
                 class="tag-suggestion"
                 role="option"
                 tabindex="0"
-                data-tag="${this.escapeHtml(tag)}"
+                data-tag="${tag}"
             >
                 ${this.escapeHtml(tag)}
             </div>
@@ -432,11 +432,7 @@ class IdeaApp {
         dropdown.querySelectorAll('.tag-suggestion').forEach(el => {
             el.addEventListener('click', (e) => {
                 const tag = e.target.getAttribute('data-tag');
-                // Decode HTML entities back to original text
-                const textarea = document.createElement('textarea');
-                textarea.innerHTML = tag;
-                const decodedTag = textarea.value;
-                this.selectSuggestion(decodedTag);
+                this.selectSuggestion(tag);
             });
         });
 
