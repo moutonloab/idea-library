@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Idea Library - Capture, organize, and distill your ideas">
+    <title>Idea Library</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+
+    <header role="banner">
+        <div class="container">
+            <h1><a href="#/" class="logo">Idea Library</a></h1>
+            <nav role="navigation" aria-label="Main navigation">
+                <ul>
+                    <li><a href="#/" id="nav-home">Ideas</a></li>
+                    <li><a href="#/create" id="nav-create">New Idea</a></li>
+                    <li><button id="export-btn" type="button" aria-label="Export all ideas">Export</button></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main" role="main">
+        <div class="container">
+            <!-- Loading state -->
+            <div id="loading-view" class="view" aria-live="polite">
+                <p>Loading...</p>
+            </div>
+
+            <!-- List view -->
+            <div id="list-view" class="view" style="display: none;">
+                <div class="view-header">
+                    <h2>Your Ideas</h2>
+                    <a href="#/create" class="btn btn-primary">
+                        <span aria-hidden="true">+</span> New Idea
+                    </a>
+                </div>
+                <div id="ideas-list" role="list"></div>
+                <div id="empty-state" style="display: none;">
+                    <p>No ideas yet. <a href="#/create">Create your first idea</a>!</p>
+                </div>
+            </div>
+
+            <!-- Create/Edit view -->
+            <div id="form-view" class="view" style="display: none;">
+                <h2 id="form-title">New Idea</h2>
+                <form id="idea-form" novalidate>
+                    <input type="hidden" id="idea-id" name="id">
+
+                    <div class="form-group">
+                        <label for="idea-title">
+                            Title <span class="required" aria-label="required">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="idea-title"
+                            name="title"
+                            required
+                            aria-required="true"
+                            placeholder="What's your idea?"
+                        >
+                        <span class="error" id="title-error" role="alert"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="idea-body">
+                            Description <span class="required" aria-label="required">*</span>
+                        </label>
+                        <textarea
+                            id="idea-body"
+                            name="body"
+                            required
+                            aria-required="true"
+                            rows="10"
+                            placeholder="Describe your idea in detail..."
+                        ></textarea>
+                        <span class="error" id="body-error" role="alert"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="idea-tags-input">
+                            Tags <span class="help-text">(Press Enter to add)</span>
+                        </label>
+                        <div class="tags-input-wrapper">
+                            <div id="tags-display" class="tags-display" role="list"></div>
+                            <input
+                                type="text"
+                                id="idea-tags-input"
+                                name="tags-input"
+                                placeholder="Add a tag..."
+                                autocomplete="off"
+                                list="tags-suggestions"
+                            >
+                            <datalist id="tags-suggestions"></datalist>
+                        </div>
+                        <div id="tags-dropdown" class="tags-dropdown" style="display: none;" role="listbox"></div>
+                        <span class="help-text">Click a tag to remove it</span>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a href="#/" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Detail view -->
+            <div id="detail-view" class="view" style="display: none;">
+                <div class="view-header">
+                    <a href="#/" class="btn btn-back" aria-label="Back to list">← Back</a>
+                    <div class="actions">
+                        <a href="#" id="edit-btn" class="btn btn-primary">Edit</a>
+                        <button type="button" id="delete-btn" class="btn btn-danger">Delete</button>
+                    </div>
+                </div>
+                <article id="idea-detail">
+                    <h2 id="detail-title"></h2>
+                    <div class="metadata">
+                        <time id="detail-created" datetime=""></time>
+                        <time id="detail-updated" datetime=""></time>
+                    </div>
+                    <div id="detail-tags" class="idea-tags"></div>
+                    <div id="detail-body" class="idea-body"></div>
+                </article>
+            </div>
+
+            <!-- Error view -->
+            <div id="error-view" class="view" style="display: none;" role="alert">
+                <h2>Error</h2>
+                <p id="error-message"></p>
+                <a href="#/" class="btn btn-primary">Go to Ideas</a>
+            </div>
+        </div>
+    </main>
+
+    <footer role="contentinfo">
+        <div class="container">
+            <p>&copy; 2026 Idea Library | <a href="https://github.com/moutonloab/idea-library">GitHub</a></p>
+        </div>
+    </footer>
+
+    <!-- sql.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+
+    <!-- App scripts -->
+    <script type="module" src="js/db.js"></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
