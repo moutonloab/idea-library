@@ -81,23 +81,29 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="idea-tags-input">
-                            Tags <span class="help-text">(Press Enter to add)</span>
+                        <label id="tags-label" for="idea-tags-input">
+                            Tags <span class="help-text">(Press Enter or select from suggestions)</span>
                         </label>
                         <div class="tags-input-wrapper">
-                            <div id="tags-display" class="tags-display" role="list"></div>
+                            <div id="tags-display" class="tags-display" role="list" aria-label="Selected tags"></div>
                             <input
                                 type="text"
                                 id="idea-tags-input"
                                 name="tags-input"
                                 placeholder="Add a tag..."
                                 autocomplete="off"
-                                list="tags-suggestions"
+                                role="combobox"
+                                aria-autocomplete="list"
+                                aria-controls="tags-dropdown"
+                                aria-expanded="false"
+                                aria-haspopup="listbox"
+                                aria-labelledby="tags-label"
                             >
-                            <datalist id="tags-suggestions"></datalist>
                         </div>
-                        <div id="tags-dropdown" class="tags-dropdown" style="display: none;" role="listbox"></div>
-                        <span class="help-text">Click a tag to remove it</span>
+                        <div id="tags-dropdown" class="tags-dropdown" style="display: none;" role="listbox" aria-label="Tag suggestions"></div>
+                        <!-- Live region for screen reader announcements -->
+                        <div id="tags-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+                        <span class="help-text">Tap a tag to remove it</span>
                     </div>
 
                     <div class="form-actions">

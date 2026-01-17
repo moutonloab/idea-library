@@ -61,8 +61,9 @@ class IdeaApp {
         tagsInput.addEventListener('input', (e) => this.handleTagInputChange(e));
         tagsInput.addEventListener('focus', () => this.showTagSuggestions());
         tagsInput.addEventListener('blur', () => {
-            // Delay to allow click on suggestions
-            setTimeout(() => this.hideTagSuggestions(), 200);
+            // Delay to allow click/touch on suggestions
+            // 500ms is needed for VoiceOver double-tap gesture on iOS
+            setTimeout(() => this.hideTagSuggestions(), 500);
         });
     }
 
@@ -294,32 +295,48 @@ class IdeaApp {
 
     /**
      * Handle tag input keydown (Enter, Escape, Arrow keys)
+     * Provides keyboard navigation for the autocomplete
      */
     handleTagInputKeydown(e) {
         const input = e.target;
         const dropdown = document.getElementById('tags-dropdown');
         const suggestions = dropdown.querySelectorAll('.tag-suggestion');
+        const liveRegion = document.getElementById('tags-live-region');
 
         if (e.key === 'Enter') {
             e.preventDefault();
 
+            let tagToAdd = '';
+            let added = false;
+
             // If a suggestion is selected, use it
             if (this.selectedSuggestionIndex >= 0 && suggestions[this.selectedSuggestionIndex]) {
-                const tagText = suggestions[this.selectedSuggestionIndex].textContent;
-                this.addTag(tagText);
+                tagToAdd = suggestions[this.selectedSuggestionIndex].getAttribute('data-tag');
+                added = this.addTag(tagToAdd);
             } else {
                 // Otherwise add the typed text
-                const value = input.value.trim();
-                if (value) {
-                    this.addTag(value);
+                tagToAdd = input.value.trim();
+                if (tagToAdd) {
+                    added = this.addTag(tagToAdd);
                 }
             }
+
             input.value = '';
             this.hideTagSuggestions();
             this.selectedSuggestionIndex = -1;
+
+            // Announce result to screen readers
+            if (tagToAdd) {
+                if (added) {
+                    liveRegion.textContent = `Tag "${tagToAdd}" added. ${this.currentTags.length} tag${this.currentTags.length !== 1 ? 's' : ''} total.`;
+                } else {
+                    liveRegion.textContent = `Tag "${tagToAdd}" already exists.`;
+                }
+            }
         } else if (e.key === 'Escape') {
             this.hideTagSuggestions();
             this.selectedSuggestionIndex = -1;
+            liveRegion.textContent = 'Suggestions closed.';
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
             if (suggestions.length > 0) {
@@ -352,59 +369,88 @@ class IdeaApp {
 
     /**
      * Add a tag
+     * @returns {boolean} true if tag was added, false if empty or duplicate
      */
     addTag(tag) {
         const trimmedTag = tag.trim();
-        if (!trimmedTag) return;
+        if (!trimmedTag) return false;
 
         // Don't add duplicates
-        if (this.currentTags.includes(trimmedTag)) return;
+        if (this.currentTags.includes(trimmedTag)) return false;
 
         this.currentTags.push(trimmedTag);
         this.renderTags();
+        return true;
     }
 
     /**
      * Remove a tag
+     * Announces the removal to screen readers
      */
     removeTag(tag) {
+        const liveRegion = document.getElementById('tags-live-region');
         this.currentTags = this.currentTags.filter(t => t !== tag);
         this.renderTags();
+
+        // Announce tag removal to screen readers
+        const remaining = this.currentTags.length;
+        if (remaining === 0) {
+            liveRegion.textContent = `Tag "${tag}" removed. No tags remaining.`;
+        } else {
+            liveRegion.textContent = `Tag "${tag}" removed. ${remaining} tag${remaining !== 1 ? 's' : ''} remaining.`;
+        }
+
+        // Return focus to the tags input for seamless flow
+        document.getElementById('idea-tags-input').focus();
     }
 
     /**
      * Render tags in the form
+     * Each tag has accessible remove functionality
      */
     renderTags() {
         const display = document.getElementById('tags-display');
         display.innerHTML = this.currentTags.map((tag, index) => `
-            <span class="tag" role="listitem" tabindex="0" data-tag-index="${index}">
-                ${this.escapeHtml(tag)}
+            <span class="tag" role="listitem" data-tag="${this.escapeHtml(tag)}">
+                <span class="tag-text">${this.escapeHtml(tag)}</span>
                 <button
                     class="tag-remove"
                     type="button"
-                    data-tag-index="${index}"
+                    data-tag="${this.escapeHtml(tag)}"
                     aria-label="Remove tag ${this.escapeHtml(tag)}"
                 >×</button>
             </span>
         `).join('');
 
-        // Add event listeners for remove buttons
+        // Add event listeners for remove buttons (click and touch for iOS VoiceOver)
         display.querySelectorAll('.tag-remove').forEach(btn => {
+            const tagName = btn.getAttribute('data-tag');
+
+            // Click handler
             btn.addEventListener('click', (e) => {
-                const index = parseInt(e.target.getAttribute('data-tag-index'));
-                this.currentTags.splice(index, 1);
-                this.renderTags();
+                e.preventDefault();
+                e.stopPropagation();
+                this.removeTag(tagName);
+            });
+
+            // Touch handler for iOS
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.removeTag(tagName);
             });
         });
     }
 
     /**
      * Show tag suggestions dropdown
+     * Implements WAI-ARIA combobox pattern for screen reader accessibility
      */
     showTagSuggestions(filter = '') {
         const allTags = db.getAllTags();
         const dropdown = document.getElementById('tags-dropdown');
+        const input = document.getElementById('idea-tags-input');
+        const liveRegion = document.getElementById('tags-live-region');
 
         // Filter out already selected tags and apply search filter
         let suggestions = allTags.filter(tag =>
@@ -414,66 +460,139 @@ class IdeaApp {
 
         if (suggestions.length === 0) {
             dropdown.style.display = 'none';
+            input.setAttribute('aria-expanded', 'false');
+            input.removeAttribute('aria-activedescendant');
+            // Announce no suggestions available
+            if (filter) {
+                liveRegion.textContent = 'No matching tags found. Type and press Enter to create a new tag.';
+            } else {
+                liveRegion.textContent = '';
+            }
             return;
         }
 
+        // Build suggestions with unique IDs for aria-activedescendant
         dropdown.innerHTML = suggestions.map((tag, index) => `
             <div
+                id="tag-suggestion-${index}"
                 class="tag-suggestion"
                 role="option"
-                tabindex="0"
-                data-tag="${tag}"
+                tabindex="-1"
+                data-tag="${this.escapeHtml(tag)}"
+                data-index="${index}"
+                aria-selected="false"
             >
                 ${this.escapeHtml(tag)}
             </div>
         `).join('');
 
-        // Add event listeners for suggestions
+        // Add event listeners for suggestions (click and touch for iOS VoiceOver)
         dropdown.querySelectorAll('.tag-suggestion').forEach(el => {
+            // Click handler for mouse and VoiceOver synthetic clicks
             el.addEventListener('click', (e) => {
-                const tag = e.target.getAttribute('data-tag');
+                e.preventDefault();
+                e.stopPropagation();
+                const tag = el.getAttribute('data-tag');
                 this.selectSuggestion(tag);
+            });
+
+            // Touch handler for iOS - fires before blur timeout
+            el.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const tag = el.getAttribute('data-tag');
+                this.selectSuggestion(tag);
+            });
+
+            // Allow focus for VoiceOver navigation
+            el.addEventListener('focus', () => {
+                const index = parseInt(el.getAttribute('data-index'));
+                this.selectedSuggestionIndex = index;
+                this.updateSelectedSuggestion();
             });
         });
 
         dropdown.style.display = 'block';
+        input.setAttribute('aria-expanded', 'true');
         this.selectedSuggestionIndex = -1;
+
+        // Announce suggestions to screen readers
+        const count = suggestions.length;
+        const tagList = suggestions.slice(0, 3).join(', ');
+        const moreText = count > 3 ? ` and ${count - 3} more` : '';
+        liveRegion.textContent = `${count} tag suggestion${count !== 1 ? 's' : ''} available: ${tagList}${moreText}. Use arrow keys to navigate or swipe to explore.`;
     }
 
     /**
      * Hide tag suggestions dropdown
+     * Resets all ARIA states for accessibility
      */
     hideTagSuggestions() {
         const dropdown = document.getElementById('tags-dropdown');
+        const input = document.getElementById('idea-tags-input');
+        const liveRegion = document.getElementById('tags-live-region');
+
         dropdown.style.display = 'none';
+        input.setAttribute('aria-expanded', 'false');
+        input.removeAttribute('aria-activedescendant');
         this.selectedSuggestionIndex = -1;
+
+        // Clear any previous announcements
+        liveRegion.textContent = '';
     }
 
     /**
      * Select a suggestion from dropdown
+     * Announces the selection to screen readers
      */
     selectSuggestion(tag) {
-        this.addTag(tag);
+        const liveRegion = document.getElementById('tags-live-region');
+        const added = this.addTag(tag);
+
         document.getElementById('idea-tags-input').value = '';
         this.hideTagSuggestions();
         document.getElementById('idea-tags-input').focus();
+
+        // Announce the tag was added
+        if (added) {
+            liveRegion.textContent = `Tag "${tag}" added. ${this.currentTags.length} tag${this.currentTags.length !== 1 ? 's' : ''} total.`;
+        } else {
+            liveRegion.textContent = `Tag "${tag}" already exists.`;
+        }
     }
 
     /**
      * Update selected suggestion visual state
+     * Sets aria-activedescendant for screen reader navigation
      */
     updateSelectedSuggestion() {
         const dropdown = document.getElementById('tags-dropdown');
+        const input = document.getElementById('idea-tags-input');
         const suggestions = dropdown.querySelectorAll('.tag-suggestion');
+        const liveRegion = document.getElementById('tags-live-region');
 
         suggestions.forEach((s, i) => {
             if (i === this.selectedSuggestionIndex) {
                 s.classList.add('selected');
+                s.setAttribute('aria-selected', 'true');
                 s.scrollIntoView({ block: 'nearest' });
+
+                // Set aria-activedescendant to point to the selected option
+                input.setAttribute('aria-activedescendant', `tag-suggestion-${i}`);
+
+                // Announce the selected tag to screen readers
+                const tagName = s.getAttribute('data-tag');
+                liveRegion.textContent = `${tagName}, ${i + 1} of ${suggestions.length}`;
             } else {
                 s.classList.remove('selected');
+                s.setAttribute('aria-selected', 'false');
             }
         });
+
+        // If nothing is selected, remove aria-activedescendant
+        if (this.selectedSuggestionIndex < 0) {
+            input.removeAttribute('aria-activedescendant');
+        }
     }
 
     /**
