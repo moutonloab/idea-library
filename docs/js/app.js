@@ -11,6 +11,7 @@ class IdeaApp {
         this.currentIdeaId = null;
         this.currentTags = [];  // Tags for current idea being created/edited
         this.selectedSuggestionIndex = -1;  // For keyboard navigation in dropdown
+        this.blurTimeoutId = null;  // Track blur timeout for cancellation (VoiceOver support)
     }
 
     /**
@@ -59,11 +60,18 @@ class IdeaApp {
         const tagsInput = document.getElementById('idea-tags-input');
         tagsInput.addEventListener('keydown', (e) => this.handleTagInputKeydown(e));
         tagsInput.addEventListener('input', (e) => this.handleTagInputChange(e));
-        tagsInput.addEventListener('focus', () => this.showTagSuggestions());
+        tagsInput.addEventListener('focus', () => {
+            // Cancel any pending blur timeout - user is back in the input
+            this.cancelBlurTimeout();
+            this.showTagSuggestions();
+        });
         tagsInput.addEventListener('blur', () => {
-            // Delay to allow click/touch on suggestions
-            // 500ms is needed for VoiceOver double-tap gesture on iOS
-            setTimeout(() => this.hideTagSuggestions(), 500);
+            // Delay to allow click/touch on suggestions and VoiceOver navigation
+            // Store timeout ID so it can be cancelled if focus moves to suggestions
+            this.blurTimeoutId = setTimeout(() => {
+                this.hideTagSuggestions();
+                this.blurTimeoutId = null;
+            }, 500);
         });
     }
 
@@ -504,11 +512,34 @@ class IdeaApp {
                 this.selectSuggestion(tag);
             });
 
-            // Allow focus for VoiceOver navigation
+            // Focus handler for VoiceOver navigation
+            // Cancel blur timeout to keep dropdown open while navigating
             el.addEventListener('focus', () => {
+                // Cancel any pending blur timeout - user is still in the widget
+                this.cancelBlurTimeout();
+
                 const index = parseInt(el.getAttribute('data-index'));
                 this.selectedSuggestionIndex = index;
                 this.updateSelectedSuggestion();
+            });
+
+            // Blur handler for widget-level focus tracking
+            // Only hide if focus is leaving the entire combobox widget
+            el.addEventListener('blur', (e) => {
+                // Check if focus is moving to another suggestion or back to input
+                const relatedTarget = e.relatedTarget;
+                const isMovingWithinWidget = relatedTarget && (
+                    relatedTarget.id === 'idea-tags-input' ||
+                    relatedTarget.classList.contains('tag-suggestion')
+                );
+
+                if (!isMovingWithinWidget) {
+                    // Focus is leaving the widget entirely - hide after short delay
+                    this.blurTimeoutId = setTimeout(() => {
+                        this.hideTagSuggestions();
+                        this.blurTimeoutId = null;
+                    }, 300);
+                }
             });
         });
 
@@ -524,10 +555,24 @@ class IdeaApp {
     }
 
     /**
+     * Cancel any pending blur timeout
+     * Called when focus moves within the combobox widget (e.g., to a suggestion)
+     */
+    cancelBlurTimeout() {
+        if (this.blurTimeoutId) {
+            clearTimeout(this.blurTimeoutId);
+            this.blurTimeoutId = null;
+        }
+    }
+
+    /**
      * Hide tag suggestions dropdown
      * Resets all ARIA states for accessibility
      */
     hideTagSuggestions() {
+        // Cancel any pending blur timeout first
+        this.cancelBlurTimeout();
+
         const dropdown = document.getElementById('tags-dropdown');
         const input = document.getElementById('idea-tags-input');
         const liveRegion = document.getElementById('tags-live-region');
