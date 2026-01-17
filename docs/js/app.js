@@ -5,6 +5,21 @@
 
 import { db } from './db.js';
 
+/**
+ * Debounce utility function
+ * Delays execution until after wait milliseconds have elapsed since the last call
+ * @param {Function} func - The function to debounce
+ * @param {number} wait - Milliseconds to wait
+ * @returns {Function} Debounced function
+ */
+function debounce(func, wait) {
+    let timeoutId = null;
+    return function(...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
 class IdeaApp {
     constructor() {
         this.currentView = null;
@@ -12,6 +27,7 @@ class IdeaApp {
         this.currentTags = [];  // Tags for current idea being created/edited
         this.selectedSuggestionIndex = -1;  // For keyboard navigation in dropdown
         this.blurTimeoutId = null;  // Track blur timeout for cancellation (VoiceOver support)
+        this.debouncedSaveDraft = debounce(() => this.saveDraft(), 500);  // Debounced draft save
     }
 
     /**
@@ -55,6 +71,12 @@ class IdeaApp {
         // Delete button
         const deleteBtn = document.getElementById('delete-btn');
         deleteBtn.addEventListener('click', () => this.handleDelete());
+
+        // Draft autosave for title and body fields
+        const titleInput = document.getElementById('idea-title');
+        const bodyInput = document.getElementById('idea-body');
+        titleInput.addEventListener('input', () => this.debouncedSaveDraft());
+        bodyInput.addEventListener('input', () => this.debouncedSaveDraft());
 
         // Tags input
         const tagsInput = document.getElementById('idea-tags-input');
@@ -232,9 +254,19 @@ class IdeaApp {
         }
 
         this.renderTags();  // Render tags
+
+        // Check for and restore any saved draft
+        const draftRestored = this.loadDraft();
+
         this.showView('form-view');
         // Focus first input for accessibility
         document.getElementById('idea-title').focus();
+
+        // Announce draft restoration to screen readers (one-time, relevant info)
+        if (draftRestored) {
+            const liveRegion = document.getElementById('tags-live-region');
+            liveRegion.textContent = 'Previously entered text has been restored.';
+        }
     }
 
     /**
@@ -269,6 +301,9 @@ class IdeaApp {
         }
 
         try {
+            // Clear draft before saving - prevents stale draft on next form open
+            this.clearDraft();
+
             if (id) {
                 // Update existing idea
                 db.updateIdea(id, { title, body, tags: this.currentTags });
@@ -562,6 +597,100 @@ class IdeaApp {
         if (this.blurTimeoutId) {
             clearTimeout(this.blurTimeoutId);
             this.blurTimeoutId = null;
+        }
+    }
+
+    /**
+     * Get the localStorage key for draft storage
+     * @returns {string} The localStorage key
+     */
+    getDraftKey() {
+        const id = document.getElementById('idea-id').value;
+        return id ? `idea-draft-${id}` : 'idea-draft-new';
+    }
+
+    /**
+     * Save current form state as draft to localStorage
+     * Called automatically via debounce on input events
+     */
+    saveDraft() {
+        const title = document.getElementById('idea-title').value;
+        const body = document.getElementById('idea-body').value;
+
+        // Only save if there's actual content
+        if (!title && !body) {
+            return;
+        }
+
+        const draft = {
+            title: title,
+            body: body,
+            tags: this.currentTags,
+            savedAt: new Date().toISOString()
+        };
+
+        try {
+            localStorage.setItem(this.getDraftKey(), JSON.stringify(draft));
+        } catch (error) {
+            // localStorage might be full or disabled - fail silently
+            console.warn('Failed to save draft:', error);
+        }
+    }
+
+    /**
+     * Load draft from localStorage if it exists and is newer than database
+     * @returns {boolean} True if a draft was restored
+     */
+    loadDraft() {
+        const key = this.getDraftKey();
+        const draftJson = localStorage.getItem(key);
+
+        if (!draftJson) {
+            return false;
+        }
+
+        try {
+            const draft = JSON.parse(draftJson);
+            const id = document.getElementById('idea-id').value;
+
+            // For existing ideas, compare timestamps
+            if (id) {
+                const idea = db.getIdea(id);
+                if (idea && new Date(idea.updated_at) > new Date(draft.savedAt)) {
+                    // Database is newer - discard outdated draft
+                    localStorage.removeItem(key);
+                    return false;
+                }
+            }
+
+            // Restore draft values
+            document.getElementById('idea-title').value = draft.title || '';
+            document.getElementById('idea-body').value = draft.body || '';
+
+            // Restore tags if present
+            if (draft.tags && Array.isArray(draft.tags)) {
+                this.currentTags = draft.tags;
+                this.renderTags();
+            }
+
+            return true;
+        } catch (error) {
+            // Invalid JSON - remove corrupted draft
+            console.warn('Failed to load draft:', error);
+            localStorage.removeItem(key);
+            return false;
+        }
+    }
+
+    /**
+     * Clear draft from localStorage
+     * Called after successful form submission
+     */
+    clearDraft() {
+        try {
+            localStorage.removeItem(this.getDraftKey());
+        } catch (error) {
+            console.warn('Failed to clear draft:', error);
         }
     }
 
